@@ -7,18 +7,17 @@ const PORT = process.env.PORT || 3000;
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(bodyParser.json());
 
-// Health check route for browser
 app.get('/', (req, res) => {
   res.send('✅ LunchBot is running!');
 });
 
-// TEST /lunch route
 app.post('/lunch', (req, res) => {
-  console.log("✅ Slack request received:", req.body);
+  console.log("✅ Slack request received!");
+  console.log("BODY:", req.body);
 
-  return res.json({
+  res.json({
     response_type: "in_channel",
-    text: "🍝 Your lunch bot is alive and ready!"
+    text: "✅ Hello from your lunch bot!"
   });
 });
 
