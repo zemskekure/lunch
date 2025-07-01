@@ -32,34 +32,36 @@ app.post('/lunch', async (req, res) => {
 
     let responseText = '';
 
-    const boxesContainer = $('.boxes');
-    const children = boxesContainer.children();
+const boxesContainer = $('.boxes');
+const children = boxesContainer.children();
 
-    for (let i = 0; i < children.length; i++) {
-      const el = children[i];
+for (let i = 0; i < children.length; i++) {
+  const el = children[i];
 
-      if (el.tagName === 'h2' && $(el).text().toLowerCase().startsWith('zítra')) {
-        break;
-      }
+  // Stop if we reach tomorrow's section
+  if ($(el).is('h2') && $(el).text().toLowerCase().startsWith('zítra')) {
+    break;
+  }
 
-      if ($(el).hasClass('list')) {
-        const boxes = $(el).find('.box');
+  // Process only lists before "zítra"
+  if ($(el).hasClass('list')) {
+    const boxes = $(el).find('.box');
 
-        boxes.each((idx, box) => {
-          const restaurant = $(box).find('img').attr('alt').trim().toLowerCase();
+    boxes.each((idx, box) => {
+      const restaurant = $(box).find('img').attr('alt').trim().toLowerCase();
 
-          if (restaurant === 'lokál dlouhá') {
-            $(box).find('.jidlo').each((j, jidlo) => {
-              const dish = $(jidlo).find('strong').text().trim();
-              const price = $(jidlo).find('.cena').text().trim();
-              if (dish) {
-                responseText += `• ${dish} (${price})\n`;
-              }
-            });
+      if (restaurant === 'lokál dlouhá') {
+        $(box).find('.jidlo').each((j, jidlo) => {
+          const dish = $(jidlo).find('strong').text().trim();
+          const price = $(jidlo).find('.cena').text().trim();
+          if (dish) {
+            responseText += `• ${dish} (${price})\n`;
           }
         });
       }
-    }
+    });
+  }
+}
 
     if (!responseText) {
       responseText = `🙁 No menu found for Lokál Dlouhá today.`;
