@@ -7,7 +7,7 @@ const cheerio = require('cheerio');
   const $ = cheerio.load(data);
 
   let responseText = '';
-  let currentSection = 'unknown';
+  let inToday = true;
 
   const boxesContainer = $('.boxes');
   const children = boxesContainer.children();
@@ -15,21 +15,16 @@ const cheerio = require('cheerio');
   for (let i = 0; i < children.length; i++) {
     const el = children[i];
 
-    // Detect which section we're in
     if ($(el).is('h2')) {
-      const text = $(el).text().toLowerCase();
-      if (text.includes('zítra')) {
-        currentSection = 'tomorrow';
-        console.log("⏹️ Switched to TOMORROW section. Skipping further lists.");
-      } else if (text.includes('dnes')) {
-        currentSection = 'today';
-        console.log("✅ Switched to TODAY section.");
+      const heading = $(el).text().toLowerCase();
+      if (heading.includes('zítra')) {
+        console.log("⏹️ Found 'zítra' heading. Stopping parsing here.");
+        inToday = false;
+        break;
       }
-      continue;
     }
 
-    // Only process lists in the TODAY section
-    if (currentSection === 'today' && $(el).hasClass('list')) {
+    if (inToday && $(el).hasClass('list')) {
       const boxes = $(el).children('.box');
 
       boxes.each((idx, box) => {
