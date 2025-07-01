@@ -7,22 +7,29 @@ const cheerio = require('cheerio');
   const $ = cheerio.load(data);
 
   let responseText = '';
+  let currentSection = 'unknown';
 
   const boxesContainer = $('.boxes');
   const children = boxesContainer.children();
 
-  let stop = false;
-
   for (let i = 0; i < children.length; i++) {
     const el = children[i];
 
-    // Stop if we reach "zítra"
-    if ($(el).is('h2') && $(el).text().toLowerCase().includes('zítra')) {
-      console.log("⏹️ Found 'zítra' heading. Stopping.");
-      break;
+    // Detect which section we're in
+    if ($(el).is('h2')) {
+      const text = $(el).text().toLowerCase();
+      if (text.includes('zítra')) {
+        currentSection = 'tomorrow';
+        console.log("⏹️ Switched to TOMORROW section. Skipping further lists.");
+      } else if (text.includes('dnes')) {
+        currentSection = 'today';
+        console.log("✅ Switched to TODAY section.");
+      }
+      continue;
     }
 
-    if ($(el).hasClass('list')) {
+    // Only process lists in the TODAY section
+    if (currentSection === 'today' && $(el).hasClass('list')) {
       const boxes = $(el).children('.box');
 
       boxes.each((idx, box) => {
