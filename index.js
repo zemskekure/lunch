@@ -14,20 +14,24 @@ const cheerio = require('cheerio');
   for (let i = 0; i < children.length; i++) {
     const el = children[i];
 
-    // Stop when we reach the "zítra" heading
+    // Stop if we reach the heading for tomorrow
     if ($(el).is('h2') && $(el).text().toLowerCase().startsWith('zítra')) {
       console.log("⏹️ Found 'zítra' heading, stopping here.");
       break;
     }
 
-    // Process only lists before "zítra"
+    // Process lists before 'zítra'
     if ($(el).hasClass('list')) {
       const boxes = $(el).children('.box');
 
       boxes.each((idx, box) => {
-        const restaurant = $(box).find('img').attr('alt').trim().toLowerCase();
+        // Get and normalize the restaurant name
+        const restaurant = $(box).find('img').attr('alt').trim().toLowerCase()
+          .normalize('NFD').replace(/[\u0300-\u036f]/g, '');
 
-        if (restaurant === 'lokál dlouhá') {
+        console.log("Found restaurant alt:", restaurant);
+
+        if (restaurant === 'lokal dlouha') {
           $(box).children('.jidlo').each((j, jidlo) => {
             const dish = $(jidlo).find('strong').text().trim();
             const price = $(jidlo).find('.cena').text().trim();
@@ -44,7 +48,6 @@ const cheerio = require('cheerio');
     responseText = `🙁 No menu found for Lokál Dlouhá today.`;
   }
 
-  // Print the result to the console
   console.log("\nToday's menu for Lokál Dlouhá:\n");
   console.log(responseText);
 })();
