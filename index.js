@@ -8,41 +8,26 @@ const cheerio = require('cheerio');
 
   let responseText = '';
 
-  const boxesContainer = $('.boxes');
-  const children = boxesContainer.children();
+  // Select only today's container
+  const todayContainer = $('#denni-dnes');
+  const boxes = todayContainer.find('.list > .box');
 
-  for (let i = 0; i < children.length; i++) {
-    const el = children[i];
+  boxes.each((idx, box) => {
+    const restaurant = $(box).find('img').attr('alt').trim().toLowerCase()
+      .normalize('NFD').replace(/[\u0300-\u036f]/g, '');
 
-    // Stop if we reach the heading for tomorrow
-    if ($(el).is('h2') && $(el).text().toLowerCase().startsWith('zítra')) {
-      console.log("⏹️ Found 'zítra' heading, stopping here.");
-      break;
-    }
+    console.log("Found restaurant alt:", restaurant);
 
-    // Process lists before 'zítra'
-    if ($(el).hasClass('list')) {
-      const boxes = $(el).children('.box');
-
-      boxes.each((idx, box) => {
-        // Get and normalize the restaurant name
-        const restaurant = $(box).find('img').attr('alt').trim().toLowerCase()
-          .normalize('NFD').replace(/[\u0300-\u036f]/g, '');
-
-        console.log("Found restaurant alt:", restaurant);
-
-        if (restaurant === 'lokal dlouha') {
-          $(box).children('.jidlo').each((j, jidlo) => {
-            const dish = $(jidlo).find('strong').text().trim();
-            const price = $(jidlo).find('.cena').text().trim();
-            if (dish) {
-              responseText += `• ${dish} (${price})\n`;
-            }
-          });
+    if (restaurant === 'lokal dlouha') {
+      $(box).children('.jidlo').each((j, jidlo) => {
+        const dish = $(jidlo).find('strong').text().trim();
+        const price = $(jidlo).find('.cena').text().trim();
+        if (dish) {
+          responseText += `• ${dish} (${price})\n`;
         }
       });
     }
-  }
+  });
 
   if (!responseText) {
     responseText = `🙁 No menu found for Lokál Dlouhá today.`;
