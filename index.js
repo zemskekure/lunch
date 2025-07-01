@@ -6,8 +6,10 @@ const cheerio = require('cheerio');
   const { data } = await axios.get(url);
   const $ = cheerio.load(data);
 
-  let responseText = '';
-  let inToday = true;
+  let currentSection = 'today';
+
+  const todayDishes = [];
+  const tomorrowDishes = [];
 
   const boxesContainer = $('.boxes');
   const children = boxesContainer.children();
@@ -18,38 +20,58 @@ const cheerio = require('cheerio');
     if ($(el).is('h2')) {
       const heading = $(el).text().toLowerCase();
       if (heading.includes('zítra')) {
-        console.log("⏹️ Found 'zítra' heading. Stopping parsing here.");
-        inToday = false;
-        break;
+        console.log("➡️ Switching to TOMORROW section.");
+        currentSection = 'tomorrow';
+      } else if (heading.includes('dnes')) {
+        console.log("➡️ Switching to TODAY section.");
+        currentSection = 'today';
       }
     }
 
-    if (inToday && $(el).hasClass('list')) {
+    if ($(el).hasClass('list')) {
       const boxes = $(el).children('.box');
 
       boxes.each((idx, box) => {
-        const restaurant = $(box).find('img').attr('alt').trim().toLowerCase()
-          .normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+        const restaurant = $(box).find('img').attr('alt').trim();
 
-        console.log("Found restaurant alt:", restaurant);
-
-        if (restaurant === 'lokal dlouha') {
-          $(box).children('.jidlo').each((j, jidlo) => {
-            const dish = $(jidlo).find('strong').text().trim();
-            const price = $(jidlo).find('.cena').text().trim();
-            if (dish) {
-              responseText += `• ${dish} (${price})\n`;
+        $(box).children('.jidlo').each((j, jidlo) => {
+          const dish = $(jidlo).find('strong').text().trim();
+          const price = $(jidlo).find('.cena').text().trim();
+          if (dish) {
+            const text = `${dish} (${restaurant}, ${price})`;
+            if (currentSection === 'today') {
+              todayDishes.push(text);
+            } else if (currentSection === 'tomorrow') {
+              tomorrowDishes.push(text);
             }
-          });
-        }
+          }
+        });
       });
     }
   }
 
-  if (!responseText) {
-    responseText = `🙁 No menu found for Lokál Dlouhá today.`;
+  // Shuffle helper
+  const shuffle = (arr) => arr.sort(() => Math.random() - 0.5);
+
+  const todayPicks = shuffle(todayDishes).slice(0, 4);
+  const tomorrowPicks = shuffle(tomorrowDishes).slice(0, 4);
+
+  let response = '';
+
+  if (todayPicks.length) {
+    response += `Služebníček má úcta, dnes vám doporučuji k obědu:\n\n`;
+    response += todayPicks.map(d => `• ${d}`).join('\n');
+    response += '\n\n';
+  } else {
+    response += `Služebníček se omlouvá, dnes žádná doporučení nenalezl.\n\n`;
   }
 
-  console.log("\nToday's menu for Lokál Dlouhá:\n");
-  console.log(responseText);
+  if (tomorrowPicks.length) {
+    response += `A zítra se můžete těšit na:\n\n`;
+    response += tomorrowPicks.map(d => `• ${d}`).join('\n');
+  } else {
+    response += `A zítra zatím žádná doporučení nejsou.`;
+  }
+
+  console.log('\n' + response);
 })();
