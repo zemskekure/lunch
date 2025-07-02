@@ -7,7 +7,6 @@ const cheerio = require('cheerio');
   const $ = cheerio.load(data);
 
   let currentSection = 'today';
-
   const todayDishes = [];
   const tomorrowDishes = [];
 
@@ -17,26 +16,29 @@ const cheerio = require('cheerio');
   for (let i = 0; i < children.length; i++) {
     const el = children[i];
 
+    // Check if this is a heading marking today or tomorrow
     if ($(el).is('h2')) {
       const heading = $(el).text().toLowerCase();
       if (heading.includes('zítra')) {
-        console.log("➡️ Switching to TOMORROW section.");
         currentSection = 'tomorrow';
+        console.log('👉 Switched to TOMORROW section.');
       } else if (heading.includes('dnes')) {
-        console.log("➡️ Switching to TODAY section.");
         currentSection = 'today';
+        console.log('👉 Switched to TODAY section.');
       }
     }
 
+    // Process menu list
     if ($(el).hasClass('list')) {
       const boxes = $(el).children('.box');
 
       boxes.each((idx, box) => {
-        const restaurant = $(box).find('img').attr('alt').trim();
+        const restaurant = $(box).find('img').attr('alt')?.trim() || 'Neznámá restaurace';
 
-        $(box).children('.jidlo').each((j, jidlo) => {
+        $(box).find('.jidlo').each((j, jidlo) => {
           const dish = $(jidlo).find('strong').text().trim();
           const price = $(jidlo).find('.cena').text().trim();
+
           if (dish) {
             const text = `${dish} (${restaurant}, ${price})`;
             if (currentSection === 'today') {
@@ -51,7 +53,7 @@ const cheerio = require('cheerio');
   }
 
   // Shuffle helper
-  const shuffle = (arr) => arr.sort(() => Math.random() - 0.5);
+  const shuffle = arr => arr.sort(() => Math.random() - 0.5);
 
   const todayPicks = shuffle(todayDishes).slice(0, 4);
   const tomorrowPicks = shuffle(tomorrowDishes).slice(0, 4);
@@ -59,18 +61,18 @@ const cheerio = require('cheerio');
   let response = '';
 
   if (todayPicks.length) {
-    response += `Služebníček má úcta, dnes vám doporučuji k obědu:\n\n`;
+    response += `👋 Služebníček hlásí! Dnes bych vám doporučil tyto dobroty:\n\n`;
     response += todayPicks.map(d => `• ${d}`).join('\n');
     response += '\n\n';
   } else {
-    response += `Služebníček se omlouvá, dnes žádná doporučení nenalezl.\n\n`;
+    response += `😕 Služebníček se omlouvá, dnes žádná jídla nenašel.\n\n`;
   }
 
   if (tomorrowPicks.length) {
-    response += `A zítra se můžete těšit na:\n\n`;
+    response += `🔮 A zítra se můžete těšit na:\n\n`;
     response += tomorrowPicks.map(d => `• ${d}`).join('\n');
   } else {
-    response += `A zítra zatím žádná doporučení nejsou.`;
+    response += `😕 Na zítra zatím nejsou žádná jídla k dispozici.`;
   }
 
   console.log('\n' + response);
