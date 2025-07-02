@@ -71,7 +71,7 @@ app.post('/', async (req, res) => {
     let responseText = '';
 
     if (todayPicks.length) {
-      responseText += `👋 Služebníček hlásí! Dnes doporučuji:\n\n`;
+      responseText += `👋 Služebníček, má úcta! Dnes doporučuji:\n\n`;
       responseText += todayPicks.map(d => `• ${d}`).join('\n');
       responseText += '\n\n';
     } else {
@@ -82,7 +82,7 @@ app.post('/', async (req, res) => {
       responseText += `🔮 Zítra se můžete těšit na:\n\n`;
       responseText += tomorrowPicks.map(d => `• ${d}`).join('\n');
     } else {
-      responseText += `😕 Na zítra zatím žádná jídla.`;
+      responseText += ``;
     }
 
     if (!responded) {
