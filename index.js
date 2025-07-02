@@ -5,14 +5,24 @@ const cheerio = require('cheerio');
 const app = express();
 app.use(express.urlencoded({ extended: true }));
 
-// Handle Slack slash command
 app.post('/', async (req, res) => {
   console.log('🔔 Slack request received');
 
-  let responseText = '';
+  let responded = false;
+  const timeout = setTimeout(() => {
+    if (!responded) {
+      console.log('⏱️ Timeout reached, sending fallback response.');
+      res.json({
+        response_type: 'ephemeral',
+        text: '⚠️ Omlouvám se, načítání trvá příliš dlouho. Zkuste to prosím znovu později.'
+      });
+      responded = true;
+    }
+  }, 2800); // respond before Slack's 3 second limit
+
   try {
     const url = 'https://obed.ambi.cz/?lang=cz';
-    const { data } = await axios.get(url);
+    const { data } = await axios.get(url, { timeout: 2000 }); // limit axios to 2 sec
     const $ = cheerio.load(data);
 
     let currentSection = 'today';
@@ -58,6 +68,8 @@ app.post('/', async (req, res) => {
     const todayPicks = shuffle(todayDishes).slice(0, 4);
     const tomorrowPicks = shuffle(tomorrowDishes).slice(0, 4);
 
+    let responseText = '';
+
     if (todayPicks.length) {
       responseText += `👋 Služebníček hlásí! Dnes doporučuji:\n\n`;
       responseText += todayPicks.map(d => `• ${d}`).join('\n');
@@ -73,15 +85,24 @@ app.post('/', async (req, res) => {
       responseText += `😕 Na zítra zatím žádná jídla.`;
     }
 
+    if (!responded) {
+      clearTimeout(timeout);
+      res.json({ response_type: 'in_channel', text: responseText });
+      responded = true;
+    }
   } catch (err) {
     console.error(err);
-    responseText = '⚠️ Došlo k chybě při načítání menu.';
+    if (!responded) {
+      clearTimeout(timeout);
+      res.json({
+        response_type: 'ephemeral',
+        text: '⚠️ Došlo k chybě při načítání menu.'
+      });
+      responded = true;
+    }
   }
-
-  res.json({ response_type: 'in_channel', text: responseText });
 });
 
-// Start HTTP server
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log(`🚀 Server running on port ${PORT}`);
